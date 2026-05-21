@@ -1,0 +1,138 @@
+name: App Store Archive Upload
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: App Store build number
+        required: true
+        default: "1"
+
+jobs:
+  archive-upload:
+    name: Archive and Upload to App Store Connect
+    runs-on: macos-15
+
+    env:
+      APP_SCHEME: FixPilot
+      APP_PROJECT: FixPilot.xcodeproj
+      APP_BUNDLE_ID: com.fixpilot.app
+      APP_TEAM_ID: 5ZP6GV85J6
+      ARCHIVE_PATH: ${{ github.workspace }}/build/FixPilot.xcarchive
+      EXPORT_PATH: ${{ github.workspace }}/build/export
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode.app
+          xcodebuild -version
+
+      - name: Validate required secrets
+        run: |
+          test -n "${{ secrets.ASC_KEY_ID }}" || (echo "Missing ASC_KEY_ID" && exit 1)
+          test -n "${{ secrets.ASC_ISSUER_ID }}" || (echo "Missing ASC_ISSUER_ID" && exit 1)
+          test -n "${{ secrets.ASC_API_KEY_P8 }}" || (echo "Missing ASC_API_KEY_P8" && exit 1)
+          test -n "${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}" || (echo "Missing IOS_DISTRIBUTION_CERTIFICATE_BASE64" && exit 1)
+          test -n "${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}" || (echo "Missing IOS_DISTRIBUTION_CERTIFICATE_PASSWORD" && exit 1)
+          test -n "${{ secrets.IOS_APPSTORE_PROFILE_BASE64 }}" || (echo "Missing IOS_APPSTORE_PROFILE_BASE64" && exit 1)
+          test -n "${{ secrets.KEYCHAIN_PASSWORD }}" || (echo "Missing KEYCHAIN_PASSWORD" && exit 1)
+
+      - name: Install App Store Connect API key
+        run: |
+          mkdir -p "$HOME/private_keys"
+          printf '%s' "${{ secrets.ASC_API_KEY_P8 }}" > "$HOME/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8"
+          chmod 600 "$HOME/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8"
+
+      - name: Install signing certificate and provisioning profile
+        run: |
+          CERT_PATH="$RUNNER_TEMP/distribution.p12"
+          PROFILE_PATH="$RUNNER_TEMP/profile.mobileprovision"
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+
+          echo "${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}" | base64 --decode > "$CERT_PATH"
+          echo "${{ secrets.IOS_APPSTORE_PROFILE_BASE64 }}" | base64 --decode > "$PROFILE_PATH"
+
+          security create-keychain -p "${{ secrets.KEYCHAIN_PASSWORD }}" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "${{ secrets.KEYCHAIN_PASSWORD }}" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "${{ secrets.KEYCHAIN_PASSWORD }}" "$KEYCHAIN_PATH"
+
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          UUID=$(/usr/libexec/PlistBuddy -c 'Print UUID' /dev/stdin <<< "$(security cms -D -i "$PROFILE_PATH")")
+          NAME=$(/usr/libexec/PlistBuddy -c 'Print Name' /dev/stdin <<< "$(security cms -D -i "$PROFILE_PATH")")
+          cp "$PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/$UUID.mobileprovision"
+          echo "PROFILE_UUID=$UUID" >> "$GITHUB_ENV"
+          echo "PROFILE_NAME=$NAME" >> "$GITHUB_ENV"
+
+      - name: Write export options
+        run: |
+          cat > ExportOptions.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store-connect</string>
+            <key>teamID</key>
+            <string>${APP_TEAM_ID}</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>${APP_BUNDLE_ID}</key>
+              <string>${PROFILE_NAME}</string>
+            </dict>
+            <key>uploadSymbols</key>
+            <true/>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Archive
+        run: |
+          mkdir -p build
+          xcodebuild \
+            -project "$APP_PROJECT" \
+            -scheme "$APP_SCHEME" \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$ARCHIVE_PATH" \
+            DEVELOPMENT_TEAM="$APP_TEAM_ID" \
+            PRODUCT_BUNDLE_IDENTIFIER="$APP_BUNDLE_ID" \
+            CURRENT_PROJECT_VERSION="${{ inputs.build_number }}" \
+            CODE_SIGN_STYLE=Manual \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
+            archive
+
+      - name: Export IPA
+        run: |
+          xcodebuild \
+            -exportArchive \
+            -archivePath "$ARCHIVE_PATH" \
+            -exportPath "$EXPORT_PATH" \
+            -exportOptionsPlist ExportOptions.plist
+
+      - name: Upload IPA to App Store Connect
+        run: |
+          IPA_PATH="$(find "$EXPORT_PATH" -name '*.ipa' -print -quit)"
+          test -n "$IPA_PATH" || (echo "IPA not found" && exit 1)
+          xcrun altool \
+            --upload-app \
+            --type ios \
+            --file "$IPA_PATH" \
+            --apiKey "${{ secrets.ASC_KEY_ID }}" \
+            --apiIssuer "${{ secrets.ASC_ISSUER_ID }}"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: FixPilot-archive-output
+          path: |
+            build
+            ExportOptions.plist
