@@ -5,7 +5,8 @@ Prepared for App Store Connect entry. This is not legal advice; confirm privacy,
 ## App Record
 
 - Platform: iOS
-- Name: FixPilot
+- Name: FixPilot AI Maintenance
+- Apple ID: `6771884260`
 - Primary language: English (U.K.) or English (U.S.)
 - Bundle ID: `com.fixpilot.app`
 - SKU: `fixpilot-ios-001`
@@ -18,11 +19,11 @@ Prepared for App Store Connect entry. This is not legal advice; confirm privacy,
 ## Version Information
 
 - Version: `1.0`
-- Copyright: `© 2026 FixPilot`
+- Copyright: `2026 FixPilot`
 - Promotional text:
   `AI-powered property maintenance, repair tracking, inspections, reminders, repair costs, and professional PDF reports for landlords and property teams.`
 - Description:
-  `FixPilot helps landlords, property managers, Airbnb hosts, facilities teams, contractors, and building managers stay on top of property maintenance. Track repair requests, prioritize urgent issues, organize inspections, schedule recurring maintenance, document repairs with photos, monitor repair spend, and generate professional maintenance reports.`
+  `FixPilot AI Maintenance helps landlords, property managers, Airbnb hosts, facilities teams, contractors, and building managers stay on top of property maintenance. Track repair requests, prioritize urgent issues, organize inspections, schedule recurring maintenance, document repairs with photos, monitor repair spend, and generate professional maintenance reports.`
 
   `The app is offline-friendly with local SwiftData storage and includes a cautious AI maintenance assistant in mock mode by default. AI suggestions are informational only and are not engineering advice, structural certification, legal advice, or a substitute for a qualified professional inspection.`
 
@@ -39,11 +40,11 @@ Prepared for App Store Connect entry. This is not legal advice; confirm privacy,
 - Keywords:
   `property maintenance, landlord, property manager, repairs, inspections, Airbnb, facilities management, contractor, maintenance reports, recurring maintenance`
 - Support URL:
-  `https://YOUR_DOMAIN.com/support`
+  `https://github.com/lanray07/FixPilot`
 - Marketing URL:
-  `https://YOUR_DOMAIN.com`
+  `https://github.com/lanray07/FixPilot`
 - Privacy Policy URL:
-  `https://YOUR_DOMAIN.com/privacy`
+  `https://github.com/lanray07/FixPilot/blob/main/PRIVACY.md`
 
 ## Review Information
 
