@@ -9,9 +9,9 @@ final class SubscriptionStore: ObservableObject {
     @Published var errorMessage: String?
 
     let productIds = [
-        "fixpilot.pro.monthly",
-        "fixpilot.pro.yearly",
-        "fixpilot.business.monthly"
+        "com.fixpilot.pro.monthly",
+        "com.fixpilot.pro.yearly",
+        "com.fixpilot.business.monthly"
     ]
 
     var hasProAccess: Bool { currentPlan == .pro || currentPlan == .business }
