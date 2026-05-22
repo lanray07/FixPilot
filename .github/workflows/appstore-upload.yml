@@ -1,6 +1,9 @@
 name: App Store Archive Upload
 
 on:
+  push:
+    tags:
+      - "appstore-build-*"
   workflow_dispatch:
     inputs:
       build_number:
@@ -39,6 +42,14 @@ jobs:
           test -n "${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}" || (echo "Missing IOS_DISTRIBUTION_CERTIFICATE_PASSWORD" && exit 1)
           test -n "${{ secrets.IOS_APPSTORE_PROFILE_BASE64 }}" || (echo "Missing IOS_APPSTORE_PROFILE_BASE64" && exit 1)
           test -n "${{ secrets.KEYCHAIN_PASSWORD }}" || (echo "Missing KEYCHAIN_PASSWORD" && exit 1)
+
+      - name: Resolve build number
+        run: |
+          BUILD_NUMBER="${{ github.event.inputs.build_number }}"
+          if [ -z "$BUILD_NUMBER" ]; then
+            BUILD_NUMBER="${{ github.run_number }}"
+          fi
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> "$GITHUB_ENV"
 
       - name: Install App Store Connect API key
         run: |
@@ -104,7 +115,7 @@ jobs:
             -archivePath "$ARCHIVE_PATH" \
             DEVELOPMENT_TEAM="$APP_TEAM_ID" \
             PRODUCT_BUNDLE_IDENTIFIER="$APP_BUNDLE_ID" \
-            CURRENT_PROJECT_VERSION="${{ inputs.build_number }}" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
             CODE_SIGN_STYLE=Manual \
             PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
             archive
