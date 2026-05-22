@@ -11,9 +11,10 @@ Add these in GitHub: `Settings` -> `Secrets and variables` -> `Actions`.
 
 ### App Store Connect API
 
-- `ASC_KEY_ID`: App Store Connect API key ID.
-- `ASC_ISSUER_ID`: App Store Connect issuer ID.
-- `ASC_API_KEY_P8`: Full contents of the `.p8` private key.
+- `APPLE_TEAM_ID`: Apple Developer Team ID.
+- `APP_STORE_CONNECT_API_KEY_ID`: App Store Connect API key ID.
+- `APP_STORE_CONNECT_API_ISSUER_ID`: App Store Connect issuer ID.
+- `APP_STORE_CONNECT_API_PRIVATE_KEY`: Full contents of the `.p8` private key.
 
 Create this in App Store Connect: `Users and Access` -> `Integrations` -> `App Store Connect API`.
 

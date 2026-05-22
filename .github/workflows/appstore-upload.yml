@@ -20,7 +20,7 @@ jobs:
       APP_SCHEME: FixPilot
       APP_PROJECT: FixPilot.xcodeproj
       APP_BUNDLE_ID: com.fixpilot.app
-      APP_TEAM_ID: 5ZP6GV85J6
+      APP_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       ARCHIVE_PATH: ${{ github.workspace }}/build/FixPilot.xcarchive
       EXPORT_PATH: ${{ github.workspace }}/build/export
 
@@ -35,9 +35,10 @@ jobs:
 
       - name: Validate required secrets
         run: |
-          test -n "${{ secrets.ASC_KEY_ID }}" || (echo "Missing ASC_KEY_ID" && exit 1)
-          test -n "${{ secrets.ASC_ISSUER_ID }}" || (echo "Missing ASC_ISSUER_ID" && exit 1)
-          test -n "${{ secrets.ASC_API_KEY_P8 }}" || (echo "Missing ASC_API_KEY_P8" && exit 1)
+          test -n "${{ secrets.APPLE_TEAM_ID }}" || (echo "Missing APPLE_TEAM_ID" && exit 1)
+          test -n "${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}" || (echo "Missing APP_STORE_CONNECT_API_KEY_ID" && exit 1)
+          test -n "${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}" || (echo "Missing APP_STORE_CONNECT_API_ISSUER_ID" && exit 1)
+          test -n "${{ secrets.APP_STORE_CONNECT_API_PRIVATE_KEY }}" || (echo "Missing APP_STORE_CONNECT_API_PRIVATE_KEY" && exit 1)
 
       - name: Resolve build number
         run: |
@@ -50,8 +51,8 @@ jobs:
       - name: Install App Store Connect API key
         run: |
           mkdir -p "$HOME/private_keys"
-          printf '%s' "${{ secrets.ASC_API_KEY_P8 }}" > "$HOME/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8"
-          chmod 600 "$HOME/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8"
+          printf '%s' "${{ secrets.APP_STORE_CONNECT_API_PRIVATE_KEY }}" > "$HOME/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}.p8"
+          chmod 600 "$HOME/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}.p8"
 
       - name: Write export options
         run: |
@@ -86,9 +87,9 @@ jobs:
             CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
             CODE_SIGN_STYLE=Automatic \
             -allowProvisioningUpdates \
-            -authenticationKeyPath "$HOME/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8" \
-            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
-            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}" \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}.p8" \
+            -authenticationKeyID "${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}" \
             archive
 
       - name: Export IPA
@@ -99,9 +100,9 @@ jobs:
             -exportPath "$EXPORT_PATH" \
             -exportOptionsPlist ExportOptions.plist \
             -allowProvisioningUpdates \
-            -authenticationKeyPath "$HOME/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8" \
-            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
-            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}"
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}.p8" \
+            -authenticationKeyID "${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}"
 
       - name: Upload IPA to App Store Connect
         run: |
@@ -111,8 +112,8 @@ jobs:
             --upload-app \
             --type ios \
             --file "$IPA_PATH" \
-            --apiKey "${{ secrets.ASC_KEY_ID }}" \
-            --apiIssuer "${{ secrets.ASC_ISSUER_ID }}"
+            --apiKey "${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}" \
+            --apiIssuer "${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
