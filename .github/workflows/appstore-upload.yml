@@ -14,7 +14,7 @@ on:
 jobs:
   archive-upload:
     name: Archive and Upload to App Store Connect
-    runs-on: macos-15
+    runs-on: macos-26
 
     env:
       APP_SCHEME: FixPilot
