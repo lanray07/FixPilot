@@ -19,24 +19,14 @@ Create this in App Store Connect: `Users and Access` -> `Integrations` -> `App S
 
 ### iOS Signing
 
-- `IOS_DISTRIBUTION_CERTIFICATE_BASE64`: Base64-encoded Apple Distribution `.p12` certificate.
-- `IOS_DISTRIBUTION_CERTIFICATE_PASSWORD`: Password for the `.p12`.
-- `IOS_APPSTORE_PROFILE_BASE64`: Base64-encoded App Store provisioning profile for `com.fixpilot.app`.
-- `KEYCHAIN_PASSWORD`: Any strong temporary password used by the workflow keychain.
-
-On macOS, encode files like this:
-
-```bash
-base64 -i distribution.p12 | pbcopy
-base64 -i FixPilot_AppStore.mobileprovision | pbcopy
-```
+The upload workflow uses Xcode automatic signing with the App Store Connect API key. No `.p12` certificate or `.mobileprovision` profile secret is required in GitHub.
 
 ## Manual Run
 
 1. Push to `main`.
 2. Open GitHub Actions.
-3. Run `App Store Archive Upload`.
-4. Enter a build number higher than the last uploaded build.
+3. Run `App Store Archive Upload`, or push a tag named `appstore-build-<number>`.
+4. Enter a build number higher than the last uploaded build when using the manual workflow button. Tag-triggered runs use the GitHub run number.
 
 The workflow uploads the `.ipa` to App Store Connect for app ID `6771884260` / bundle ID `com.fixpilot.app`.
 

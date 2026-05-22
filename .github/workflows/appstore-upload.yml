@@ -38,10 +38,6 @@ jobs:
           test -n "${{ secrets.ASC_KEY_ID }}" || (echo "Missing ASC_KEY_ID" && exit 1)
           test -n "${{ secrets.ASC_ISSUER_ID }}" || (echo "Missing ASC_ISSUER_ID" && exit 1)
           test -n "${{ secrets.ASC_API_KEY_P8 }}" || (echo "Missing ASC_API_KEY_P8" && exit 1)
-          test -n "${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}" || (echo "Missing IOS_DISTRIBUTION_CERTIFICATE_BASE64" && exit 1)
-          test -n "${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}" || (echo "Missing IOS_DISTRIBUTION_CERTIFICATE_PASSWORD" && exit 1)
-          test -n "${{ secrets.IOS_APPSTORE_PROFILE_BASE64 }}" || (echo "Missing IOS_APPSTORE_PROFILE_BASE64" && exit 1)
-          test -n "${{ secrets.KEYCHAIN_PASSWORD }}" || (echo "Missing KEYCHAIN_PASSWORD" && exit 1)
 
       - name: Resolve build number
         run: |
@@ -57,29 +53,6 @@ jobs:
           printf '%s' "${{ secrets.ASC_API_KEY_P8 }}" > "$HOME/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8"
           chmod 600 "$HOME/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8"
 
-      - name: Install signing certificate and provisioning profile
-        run: |
-          CERT_PATH="$RUNNER_TEMP/distribution.p12"
-          PROFILE_PATH="$RUNNER_TEMP/profile.mobileprovision"
-          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
-
-          echo "${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_BASE64 }}" | base64 --decode > "$CERT_PATH"
-          echo "${{ secrets.IOS_APPSTORE_PROFILE_BASE64 }}" | base64 --decode > "$PROFILE_PATH"
-
-          security create-keychain -p "${{ secrets.KEYCHAIN_PASSWORD }}" "$KEYCHAIN_PATH"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
-          security unlock-keychain -p "${{ secrets.KEYCHAIN_PASSWORD }}" "$KEYCHAIN_PATH"
-          security import "$CERT_PATH" -P "${{ secrets.IOS_DISTRIBUTION_CERTIFICATE_PASSWORD }}" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
-          security list-keychain -d user -s "$KEYCHAIN_PATH"
-          security set-key-partition-list -S apple-tool:,apple: -s -k "${{ secrets.KEYCHAIN_PASSWORD }}" "$KEYCHAIN_PATH"
-
-          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
-          UUID=$(/usr/libexec/PlistBuddy -c 'Print UUID' /dev/stdin <<< "$(security cms -D -i "$PROFILE_PATH")")
-          NAME=$(/usr/libexec/PlistBuddy -c 'Print Name' /dev/stdin <<< "$(security cms -D -i "$PROFILE_PATH")")
-          cp "$PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/$UUID.mobileprovision"
-          echo "PROFILE_UUID=$UUID" >> "$GITHUB_ENV"
-          echo "PROFILE_NAME=$NAME" >> "$GITHUB_ENV"
-
       - name: Write export options
         run: |
           cat > ExportOptions.plist <<EOF
@@ -92,12 +65,7 @@ jobs:
             <key>teamID</key>
             <string>${APP_TEAM_ID}</string>
             <key>signingStyle</key>
-            <string>manual</string>
-            <key>provisioningProfiles</key>
-            <dict>
-              <key>${APP_BUNDLE_ID}</key>
-              <string>${PROFILE_NAME}</string>
-            </dict>
+            <string>automatic</string>
             <key>uploadSymbols</key>
             <true/>
           </dict>
@@ -116,8 +84,11 @@ jobs:
             DEVELOPMENT_TEAM="$APP_TEAM_ID" \
             PRODUCT_BUNDLE_IDENTIFIER="$APP_BUNDLE_ID" \
             CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
-            CODE_SIGN_STYLE=Manual \
-            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
+            CODE_SIGN_STYLE=Automatic \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8" \
+            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}" \
             archive
 
       - name: Export IPA
@@ -126,7 +97,11 @@ jobs:
             -exportArchive \
             -archivePath "$ARCHIVE_PATH" \
             -exportPath "$EXPORT_PATH" \
-            -exportOptionsPlist ExportOptions.plist
+            -exportOptionsPlist ExportOptions.plist \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8" \
+            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}"
 
       - name: Upload IPA to App Store Connect
         run: |
