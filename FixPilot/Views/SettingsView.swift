@@ -54,8 +54,8 @@ struct SettingsView: View {
                 }
 
                 Section("Legal and safety") {
-                    NavigationLink("Privacy policy") { LegalTextView(title: "Privacy Policy", text: "Placeholder privacy policy. Replace with your production privacy policy before release.") }
-                    NavigationLink("Terms of use") { LegalTextView(title: "Terms of Use", text: "Placeholder terms of use. Replace with reviewed production terms before release.") }
+                    NavigationLink("Privacy policy") { LegalTextView(title: "Privacy Policy", text: LegalCopy.privacy) }
+                    NavigationLink("Terms of use") { LegalTextView(title: "Terms of Use", text: LegalCopy.terms) }
                     NavigationLink("AI disclaimer") { LegalTextView(title: "AI Disclaimer", text: FixPilotDisclaimer.full) }
                 }
             }
@@ -91,6 +91,35 @@ struct SettingsView: View {
         issues.forEach(modelContext.delete)
         properties.forEach(modelContext.delete)
     }
+}
+
+private enum LegalCopy {
+    static let privacy = """
+    FixPilot AI Maintenance stores property, maintenance issue, inspection, repair cost, reminder, report, and photo evidence data locally on your device.
+
+    The current version does not collect personal data on developer-operated servers. Camera and photo library access are used only when you choose to attach photo evidence to maintenance issues or inspections. Local notifications are scheduled on device for maintenance reminders.
+
+    Mock AI mode is enabled by default. If a future version enables remote AI processing, the privacy policy will be updated to explain what data is sent, why it is sent, and how it is handled.
+
+    Subscriptions are handled by Apple's StoreKit and App Store systems.
+
+    Privacy Policy:
+    https://github.com/lanray07/FixPilot/blob/main/PRIVACY.md
+    """
+
+    static let terms = """
+    FixPilot AI Maintenance uses Apple's standard End User License Agreement.
+
+    Terms of Use (EULA):
+    https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+    Auto-renewable subscriptions:
+    Pro Monthly - $19.99 - renews monthly.
+    Pro Yearly - $149.99 - renews yearly.
+    Business Monthly - $79.99 - renews monthly.
+
+    Payment is charged to your Apple ID at purchase confirmation. Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. You can manage or cancel subscriptions in your App Store account settings.
+    """
 }
 
 private struct LegalTextView: View {

@@ -3,6 +3,10 @@ import StoreKit
 
 struct PaywallView: View {
     @EnvironmentObject private var subscription: SubscriptionStore
+    @Environment(\.openURL) private var openURL
+
+    private let privacyURL = URL(string: "https://github.com/lanray07/FixPilot/blob/main/PRIVACY.md")!
+    private let termsURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
 
     var body: some View {
         ScrollView {
@@ -17,14 +21,15 @@ struct PaywallView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                PlanCard(title: "Free", price: "£0", features: ["1 property", "10 maintenance issues", "Basic reports", "FixPilot branding"], isCurrent: subscription.currentPlan == .free)
-                PlanCard(title: "Pro", price: "£19.99/mo or £149.99/yr", features: ["Up to 10 properties", "Unlimited maintenance tracking", "AI assistant", "PDF exports", "Recurring reminders", "Analytics dashboard"], isCurrent: subscription.currentPlan == .pro)
-                PlanCard(title: "Business", price: "£79.99/mo", features: ["Unlimited properties", "Team workflow placeholder", "Custom branding", "Advanced reporting", "Contractor workflow placeholder"], isCurrent: subscription.currentPlan == .business)
+                PlanCard(title: "Free", price: "$0", duration: "No subscription", features: ["1 property", "10 maintenance issues", "Basic reports", "FixPilot branding"], isCurrent: subscription.currentPlan == .free)
+                PlanCard(title: "Pro Monthly", price: "$19.99", duration: "Renews monthly", features: ["Up to 10 properties", "Unlimited maintenance tracking", "AI assistant", "PDF exports", "Recurring reminders", "Analytics dashboard"], isCurrent: subscription.currentPlan == .pro)
+                PlanCard(title: "Pro Yearly", price: "$149.99", duration: "Renews yearly", features: ["Up to 10 properties", "Unlimited maintenance tracking", "AI assistant", "PDF exports", "Recurring reminders", "Analytics dashboard"], isCurrent: subscription.currentPlan == .pro)
+                PlanCard(title: "Business Monthly", price: "$79.99", duration: "Renews monthly", features: ["Unlimited properties", "Team workflow placeholder", "Custom branding", "Advanced reporting", "Contractor workflow placeholder"], isCurrent: subscription.currentPlan == .business)
 
                 if subscription.isLoading {
                     ProgressView("Loading products...")
                 } else if subscription.products.isEmpty {
-                    Text("StoreKit products are scaffolded with placeholder identifiers. Add matching products in App Store Connect or a StoreKit configuration file.")
+                    Text("Subscription prices are shown in USD above and may be localized by the App Store before purchase.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 } else {
@@ -43,6 +48,19 @@ struct PaywallView: View {
                     Task { await subscription.restorePurchases() }
                 }
                 .buttonStyle(.bordered)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Subscription Terms")
+                        .font(.headline)
+                    Text("Payment is charged to your Apple ID at purchase confirmation. Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. You can manage or cancel subscriptions in your App Store account settings.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    HStack {
+                        Button("Privacy Policy") { openURL(privacyURL) }
+                        Button("Terms of Use (EULA)") { openURL(termsURL) }
+                    }
+                    .font(.footnote.weight(.semibold))
+                }
             }
             .padding()
         }
@@ -54,6 +72,7 @@ struct PaywallView: View {
 private struct PlanCard: View {
     let title: String
     let price: String
+    let duration: String
     let features: [String]
     let isCurrent: Bool
 
@@ -62,7 +81,7 @@ private struct PlanCard: View {
             HStack {
                 VStack(alignment: .leading) {
                     Text(title).font(.title3.weight(.bold))
-                    Text(price).foregroundStyle(.secondary)
+                    Text("\(price) - \(duration)").foregroundStyle(.secondary)
                 }
                 Spacer()
                 if isCurrent {
