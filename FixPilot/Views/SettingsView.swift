@@ -32,7 +32,10 @@ struct SettingsView: View {
                 Section("Business profile") {
                     TextField("Business name", text: $businessName)
                     TextField("Report branding", text: $reportBranding)
-                    Toggle("Mock AI enabled", isOn: $app.mockAIEnabled)
+                    LabeledContent("AI mode", value: "Mock only")
+                    Text("This release does not send issue notes, property details, or photos to any third-party AI service.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
 
                 Section("Notifications") {
@@ -99,7 +102,7 @@ private enum LegalCopy {
 
     The current version does not collect personal data on developer-operated servers. Camera and photo library access are used only when you choose to attach photo evidence to maintenance issues or inspections. Local notifications are scheduled on device for maintenance reminders.
 
-    Mock AI mode is enabled by default. If a future version enables remote AI processing, the privacy policy will be updated to explain what data is sent, why it is sent, and how it is handled.
+    AI features run in mock mode in this release. FixPilot does not send issue notes, property details, inspection notes, repair records, photos, or any other personal data to OpenAI, ChatGPT, or any third-party AI service. If a future version enables remote AI processing, the app will first explain what data is sent, identify who receives it, request user permission before sending it, and update this privacy policy.
 
     Subscriptions are handled by Apple's StoreKit and App Store systems.
 
